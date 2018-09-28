@@ -3,6 +3,10 @@
  */
 
 #include "stm32f4xx_hal.h"
+#include "rtc.h"
+
+/** Periodicity which the core will wake up to read the sensor */
+#define DEFAULT_ALARM_PERIODICITY_MS       1000
 
 typedef enum
 {
@@ -13,14 +17,16 @@ typedef enum
 
 } FSM_STATE_t;
 
-static inline void RunFSM(void);
+static inline FSM_STATE_t RunFSM(FSM_STATE_t state);
+static void AlarmCallbackFromISR(void);
+
+static volatile FSM_STATE_t g_state = FSM_STATE_A;
 
 int main(void)
 {
     while (1)
     {
-        /* Run the Finite-State Machine */
-        RunFSM();
+        g_state = RunFSM(g_state);
     }
 
     return 0;
@@ -29,18 +35,22 @@ int main(void)
 /**
  * Run the Finite-State Machine.
  *
- * @note    The Finite-State Machine is composed by 4 states
- *          (see @ref FSM_STATE_t).
+ * @note        The Finite-State Machine is composed by 4 states
+ *              (see @ref FSM_STATE_t).
+ *
+ * @param       state   Current state.
+ * @returns     Next state.
  */
-static inline void RunFSM(void)
+static inline FSM_STATE_t RunFSM(FSM_STATE_t state)
 {
-    static FSM_STATE_t state = FSM_STATE_A;
-
     switch (state)
     {
         default:
         case FSM_STATE_A: /* Initialize MCU peripherals */
             HAL_Init();
+            RTC_Init();
+            RTC_SetPeriodicAlarm(DEFAULT_ALARM_PERIODICITY_MS,
+                    AlarmCallbackFromISR);
 
             state = FSM_STATE_B;
             break;
@@ -61,8 +71,18 @@ static inline void RunFSM(void)
 
         case FSM_STATE_D: /* Sleep wait for next cycle */
             /* TODO: Enter in sleep mode */
-
-            state = FSM_STATE_C;
             break;
     }
+
+    return state;
+}
+
+/**
+ * Callback which is called by the periodic alarm.
+ *
+ * @note    This callback is called within an ISR context.
+ */
+static void AlarmCallbackFromISR(void)
+{
+    g_state = FSM_STATE_C;
 }
