@@ -70,7 +70,7 @@ static inline FSM_STATE_t RunFSM(FSM_STATE_t state)
             break;
 
         case FSM_STATE_D: /* Sleep wait for next cycle */
-            /* TODO: Enter in sleep mode */
+            HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFE);
             break;
     }
 
