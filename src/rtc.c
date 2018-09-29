@@ -21,24 +21,24 @@
 
 #define RTC_MSEC_TO_TICK(msec, clock)   ((msec * clock) / 1000)
 
-static RTC_HandleTypeDef g_rtc_handle;
-static RTC_Callback_t g_callbackFromISR;
+static RTC_HandleTypeDef rtcHandle;
+static RTC_Callback_t rtcCallbackFromISR;
 
 /**
  * Initialize the Real Time Counter and clean the periodic alarm.
  */
 void RTC_Init(void)
 {
-    g_rtc_handle.Instance = RTC;
-    g_rtc_handle.Init.HourFormat = RTC_HOURFORMAT_24;
-    g_rtc_handle.Init.AsynchPrediv = RTC_ASYNCH_PREDIV;
-    g_rtc_handle.Init.SynchPrediv = RTC_SYNCH_PREDIV;
-    g_rtc_handle.Init.OutPut = RTC_OUTPUT_DISABLE;
-    g_rtc_handle.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
-    g_rtc_handle.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
-    g_rtc_handle.State = HAL_RTC_STATE_RESET;
+    rtcHandle.Instance = RTC;
+    rtcHandle.Init.HourFormat = RTC_HOURFORMAT_24;
+    rtcHandle.Init.AsynchPrediv = RTC_ASYNCH_PREDIV;
+    rtcHandle.Init.SynchPrediv = RTC_SYNCH_PREDIV;
+    rtcHandle.Init.OutPut = RTC_OUTPUT_DISABLE;
+    rtcHandle.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
+    rtcHandle.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
+    rtcHandle.State = HAL_RTC_STATE_RESET;
 
-    ASSERT(HAL_RTC_Init(&g_rtc_handle) == HAL_OK);
+    ASSERT(HAL_RTC_Init(&rtcHandle) == HAL_OK);
 }
 
 /**
@@ -55,24 +55,24 @@ void RTC_Init(void)
  */
 void RTC_SetPeriodicAlarm(uint32_t periodicity, RTC_Callback_t callbackFromISR)
 {
-    uint32_t reload_value;
+    uint32_t reloadValue;
     uint32_t clock;
 
     ASSERT(callbackFromISR);
-    g_callbackFromISR = callbackFromISR;
+    rtcCallbackFromISR = callbackFromISR;
 
     if (periodicity > RTC_MAX_PERIORICITY_PRSC_CLK)
     {
-        reload_value = RTC_MSEC_TO_TICK(periodicity, RTC_SPRE_CLOCK_HZ);
+        reloadValue = RTC_MSEC_TO_TICK(periodicity, RTC_SPRE_CLOCK_HZ);
         clock = RTC_WAKEUPCLOCK_CK_SPRE_16BITS;
     }
     else
     {
-        reload_value = RTC_MSEC_TO_TICK(periodicity, RTC_WUT_PRESC_CLOCK_HZ);
+        reloadValue = RTC_MSEC_TO_TICK(periodicity, RTC_WUT_PRESC_CLOCK_HZ);
         clock = RTC_WAKEUPCLOCK_RTCCLK_DIV16;
     }
 
-    ASSERT(HAL_RTCEx_SetWakeUpTimer_IT(&g_rtc_handle, reload_value, clock)
+    ASSERT(HAL_RTCEx_SetWakeUpTimer_IT(&rtcHandle, reloadValue, clock)
                 == HAL_OK);
 }
 
@@ -81,20 +81,20 @@ void RTC_SetPeriodicAlarm(uint32_t periodicity, RTC_Callback_t callbackFromISR)
  */
 void HAL_RTC_MspInit(RTC_HandleTypeDef *rtc)
 {
-    RCC_OscInitTypeDef osc_init;
-    RCC_PeriphCLKInitTypeDef clk_init;
+    RCC_OscInitTypeDef oscInit;
+    RCC_PeriphCLKInitTypeDef clkInit;
 
-    osc_init.OscillatorType = RCC_OSCILLATORTYPE_LSI;
-    osc_init.PLL.PLLState = RCC_PLL_NONE;
-    osc_init.LSEState = RCC_LSE_OFF;
-    osc_init.LSIState = RCC_LSI_ON;
+    oscInit.OscillatorType = RCC_OSCILLATORTYPE_LSI;
+    oscInit.PLL.PLLState = RCC_PLL_NONE;
+    oscInit.LSEState = RCC_LSE_OFF;
+    oscInit.LSIState = RCC_LSI_ON;
 
-    ASSERT(HAL_RCC_OscConfig(&osc_init) == HAL_OK);
+    ASSERT(HAL_RCC_OscConfig(&oscInit) == HAL_OK);
 
-    clk_init.PeriphClockSelection = RCC_PERIPHCLK_RTC;
-    clk_init.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
+    clkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC;
+    clkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
 
-    ASSERT(HAL_RCCEx_PeriphCLKConfig(&clk_init) == HAL_OK);
+    ASSERT(HAL_RCCEx_PeriphCLKConfig(&clkInit) == HAL_OK);
 
     __HAL_RCC_RTC_ENABLE();
 
@@ -104,5 +104,5 @@ void HAL_RTC_MspInit(RTC_HandleTypeDef *rtc)
 
 void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 {
-    g_callbackFromISR();
+    rtcCallbackFromISR();
 }
