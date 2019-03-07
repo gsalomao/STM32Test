@@ -1,5 +1,5 @@
 /**
- * @brief   Assessment test for Nordsense.
+ * @brief   STM32 test project.
  */
 
 #include "stm32f4xx_hal.h"
