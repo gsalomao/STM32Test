@@ -1,6 +1,6 @@
-# Nordsense
+# STM32Test
 
-Assessment test using STM32F446RE and LIS2DE12TR with STM HAL driver API.
+Test using STM32F446RE and LIS2DE12TR with STM HAL driver API.
 
 ## Built With
 
